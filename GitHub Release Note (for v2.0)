@@ -1,0 +1,28 @@
+v2.0 – Enhanced NASA APOD Explorer
+
+This major update turns the basic NASA Picture of the Day Viewer into an interactive, educational experience.
+
+✨ New Features
+
+⭐ Save and view Favorites
+
+🎲 Random NASA Picture button
+
+⬇ Download image in HD
+
+🌓 Dark / Light mode toggle
+
+🔊 Voice narration of picture details
+
+⏮⏭ Easy navigation through previous and next days
+
+🪐 Improvements
+
+Clean, mobile-friendly design using TailwindCSS
+
+Persistent theme and favorite storage via localStorage
+
+Better error handling and smoother API integration
+
+Result:
+A more engaging, accessible, and feature-packed space exploration app built on NASA’s open APOD API. 🌌
