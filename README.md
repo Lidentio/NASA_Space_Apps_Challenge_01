@@ -116,7 +116,40 @@ Data Source: NASA Astronomy Picture of the Day (APOD)
 
 API: NASA Open APIs
 
-Developed by: Abhi Prasad for the NASA Space Apps Challenge 2025
+Developed by: Abhinav Prasad for the NASA Space Apps Challenge 2025
+-------------------------------------------------------------------------------------------------------------------------------
+
+🧾 Changelog
+v2.0 – Enhanced NASA APOD Explorer (October 2025)
+
+Major Update: The app has evolved from a simple NASA Picture of the Day viewer into a complete interactive space exploration experience.
+
+New Features
+
+⭐ Favorites System – Save and manage favorite NASA images using browser localStorage.
+
+🎲 Random Picture Button – Explore random APODs from NASA’s archives.
+
+⬇ Image Download Option – Download high-resolution space images directly.
+
+🌓 Dark/Light Mode Toggle – Switch between modes with saved theme preference.
+
+🔊 Voice Narration (TTS) – Listen to APOD explanations via text-to-speech.
+
+⏮⏭ Date Navigation Controls – Easily view previous or next days’ pictures.
+
+Improvements
+
+⚙️ Enhanced responsive design using TailwindCSS.
+
+🧠 Local storage for saving theme and favorites.
+
+🚀 Improved API error handling and smoother data loading.
+
+🎨 Modernized interface with cleaner UI and accessibility tweaks.
+
+Result:
+A more immersive, educational, and fun way to explore NASA’s Astronomy Picture of the Day — right from your browser.
 
 🌠 License
 
