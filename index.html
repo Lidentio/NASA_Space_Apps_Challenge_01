@@ -1,116 +1,307 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NASA Picture of the Day 🚀</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NASA APOD Explorer — Favorites · Dark Mode · TTS</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* small helper to constrain image in favoritelist */
+    .fav-thumb { width: 72px; height: 48px; object-fit: cover; border-radius: 6px; }
+  </style>
 </head>
-<body class="bg-gray-900 text-white flex flex-col items-center min-h-screen p-6">
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center p-6 transition-colors duration-200" id="page">
 
-  <h1 class="text-3xl font-bold mb-4 text-center">🌌 NASA Picture of the Day Viewer</h1>
+  <header class="w-full max-w-4xl flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+    <h1 class="text-2xl md:text-3xl font-bold">🌌 NASA APOD Explorer</h1>
 
-  <!-- Date Controls -->
-  <div class="flex flex-wrap justify-center gap-3 mb-6 items-center">
-    <button id="prevBtn" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md">⏮️ Prev</button>
-    <input id="dateInput" type="date" class="text-black p-2 rounded-md" />
-    <button id="nextBtn" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md">Next ⏭️</button>
-    <button id="randomBtn" class="bg-purple-700 hover:bg-purple-800 px-4 py-2 rounded-md">🎲 Random</button>
+    <div class="flex gap-2 items-center">
+      <button id="darkToggle" class="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded">🌓 Dark</button>
+      <button id="openFavs" class="bg-yellow-600 hover:bg-yellow-700 px-3 py-2 rounded">⭐ Favorites</button>
+    </div>
+  </header>
+
+  <!-- Controls -->
+  <section class="w-full max-w-4xl bg-gray-800 rounded-lg p-4 mb-6">
+    <div class="flex flex-wrap justify-center gap-3 mb-4">
+      <button id="prevBtn" class="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600">⏮ Prev</button>
+      <input id="dateInput" type="date" class="text-black p-2 rounded" />
+      <button id="nextBtn" class="px-3 py-2 bg-gray-700 rounded hover:bg-gray-600">Next ⏭</button>
+      <button id="randomBtn" class="px-3 py-2 bg-purple-700 rounded hover:bg-purple-800">🎲 Random</button>
+      <button id="todayBtn" class="px-3 py-2 bg-blue-600 rounded hover:bg-blue-700">📅 Today</button>
+    </div>
+
+    <div class="flex flex-wrap justify-center gap-3 items-center">
+      <button id="favBtn" class="px-3 py-2 bg-yellow-500 hover:bg-yellow-600 rounded">⭐ Add to Favorites</button>
+      <a id="downloadLink" class="px-3 py-2 bg-green-600 hover:bg-green-700 rounded hidden" download>⬇ Download</a>
+      <button id="speakBtn" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 rounded">🔊 Read Explanation</button>
+      <button id="stopSpeakBtn" class="px-3 py-2 bg-red-600 hover:bg-red-700 rounded">⏹ Stop</button>
+    </div>
+  </section>
+
+  <!-- Content -->
+  <main id="content" class="w-full max-w-4xl text-center bg-gray-800 rounded-lg p-6">
+    <p class="text-gray-400">Loading...</p>
+  </main>
+
+  <!-- Favorites Modal -->
+  <div id="favsModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center p-4">
+    <div class="bg-white text-black max-w-3xl w-full rounded-lg p-4">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-semibold">⭐ Favorites</h3>
+        <div class="flex gap-2">
+          <button id="clearFavs" class="px-3 py-1 bg-red-500 text-white rounded">Clear All</button>
+          <button id="closeFavs" class="px-3 py-1 bg-gray-300 rounded">Close</button>
+        </div>
+      </div>
+      <div id="favList" class="space-y-3 max-h-80 overflow-auto"></div>
+      <p class="text-sm text-gray-600 mt-3">Click an item to load it. Use the trash icon to remove.</p>
+    </div>
   </div>
 
-  <div id="content" class="max-w-3xl text-center"></div>
+  <footer class="mt-6 text-sm text-gray-500">Copyright &#169; 2025 Abhinav Prasad. All Rights Reserved.</footer>
 
-  <script>
-    const apiKey = "NdXOIyddhc5FARBZXLyARSqlZ9XBKvWZPldwfG5k"; // NASA API key
-    const content = document.getElementById("content");
-    const dateInput = document.getElementById("dateInput");
-    const prevBtn = document.getElementById("prevBtn");
-    const nextBtn = document.getElementById("nextBtn");
-    const randomBtn = document.getElementById("randomBtn");
+<script>
+/* ========== Configuration ========== */
+const apiKey = "NdXOIyddhc5FARBZXLyARSqlZ9XBKvWZPldwfG5k"; // <-- NASA API key
 
-    // Format date helper
-    function formatDate(date) {
-      return date.toISOString().split('T')[0];
+/* ========== Helpers ========== */
+const content = document.getElementById('content');
+const dateInput = document.getElementById('dateInput');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const randomBtn = document.getElementById('randomBtn');
+const todayBtn = document.getElementById('todayBtn');
+const favBtn = document.getElementById('favBtn');
+const downloadLink = document.getElementById('downloadLink');
+const speakBtn = document.getElementById('speakBtn');
+const stopSpeakBtn = document.getElementById('stopSpeakBtn');
+
+const openFavs = document.getElementById('openFavs');
+const favsModal = document.getElementById('favsModal');
+const favList = document.getElementById('favList');
+const closeFavs = document.getElementById('closeFavs');
+const clearFavs = document.getElementById('clearFavs');
+const darkToggle = document.getElementById('darkToggle');
+const page = document.getElementById('page');
+
+const APOD_START = new Date('1995-06-16'); // first APOD
+
+function formatDate(d){ return d.toISOString().split('T')[0]; }
+function parseDate(s){ return new Date(s + 'T00:00:00'); }
+
+/* ========== Local Storage: Favorites & Theme ========== */
+const FAV_KEY = 'apod_favorites_v1';
+const THEME_KEY = 'apod_theme_v1';
+
+function loadFavorites(){ try { return JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); } catch(e){ return []; } }
+function saveFavorites(favs){ localStorage.setItem(FAV_KEY, JSON.stringify(favs)); }
+function isFavorited(date){ return loadFavorites().some(f=>f.date===date); }
+
+/* ========== Speech (TTS) ========== */
+let synth = window.speechSynthesis;
+
+/* ========== Core: Fetch & Render APOD ========== */
+async function getAPOD(date=''){
+  content.innerHTML = `<p class="text-gray-400">Loading...</p>`;
+  try{
+    const url = `https://api.nasa.gov/planetary/apod?api_key=${apiKey}${date ? `&date=${date}` : ''}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if(data.error){
+      content.innerHTML = `<p class="text-red-500">${data.error.message}</p>`;
+      downloadLink.classList.add('hidden');
+      return;
     }
+    renderAPOD(data);
+  }catch(err){
+    console.error(err);
+    content.innerHTML = `<p class="text-red-500">Network error. Try running via a local server.</p>`;
+  }
+}
 
-    // Fetch APOD data
-    async function getAPOD(date = "") {
-      content.innerHTML = `<p class="text-gray-400">Loading...</p>`;
-      try {
-        const url = `https://api.nasa.gov/planetary/apod?api_key=${apiKey}${date ? `&date=${date}` : ""}`;
-        const res = await fetch(url);
-        const data = await res.json();
+function renderAPOD(data){
+  const isImage = data.media_type === 'image';
+  const media = isImage
+    ? `<img id="apodImage" src="${data.url}" alt="${escapeHtml(data.title)}" class="rounded-lg shadow-lg mb-4 mx-auto max-h-[520px] w-full object-contain" />`
+    : `<iframe class="mx-auto mb-4 rounded-lg shadow-lg" width="560" height="315" src="${data.url}" frameborder="0" allowfullscreen></iframe>`;
 
-        if (data.error) {
-          content.innerHTML = `<p class="text-red-500">${data.error.message}</p>`;
-          return;
-        }
+  // download link (image only)
+  if(isImage){
+    downloadLink.href = data.hdurl || data.url;
+    downloadLink.classList.remove('hidden');
+    downloadLink.setAttribute('download', `${data.date}_apod.jpg`);
+  } else {
+    downloadLink.classList.add('hidden');
+  }
 
-        renderAPOD(data);
-      } catch (error) {
-        content.innerHTML = `<p class="text-red-500">Error fetching data. Try again later!</p>`;
-        console.error(error);
-      }
-    }
+  // Favorite state
+  const favText = isFavorited(data.date) ? 'Remove Favorite' : '⭐ Add to Favorites';
+  favBtn.textContent = isFavorited(data.date) ? '★ Favorited' : '⭐ Add to Favorites';
 
-    // Render APOD content
-    function renderAPOD(data) {
-      const isImage = data.media_type === "image";
-      const mediaHTML = isImage
-        ? `<img src="${data.url}" alt="${data.title}" class="rounded-lg shadow-lg mb-4 mx-auto max-h-[500px]" />`
-        : `<iframe class="mx-auto mb-4 rounded-lg shadow-lg" width="560" height="315" src="${data.url}" frameborder="0" allowfullscreen></iframe>`;
+  content.innerHTML = `
+    <h2 class="text-2xl font-semibold mb-1">${escapeHtml(data.title)}</h2>
+    <p class="text-gray-400 mb-2">${data.date}</p>
+    <div class="mb-3">${media}</div>
+    <p id="explanation" class="text-sm text-gray-300 text-left whitespace-pre-wrap">${escapeHtml(data.explanation)}</p>
+  `;
 
-      const downloadButton = isImage
-        ? `<a href="${data.hdurl || data.url}" download class="inline-block bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md mt-2">⬇️ Download Image</a>`
-        : "";
+  dateInput.value = data.date;
+  // store currentData for favorites / tts use
+  currentData = {
+    date: data.date,
+    title: data.title,
+    url: data.url,
+    hdurl: data.hdurl || data.url,
+    explanation: data.explanation,
+    media_type: data.media_type
+  };
+}
 
-      content.innerHTML = `
-        <h2 class="text-2xl font-semibold mb-2">${data.title}</h2>
-        <p class="text-gray-400 mb-2">${data.date}</p>
-        ${mediaHTML}
-        ${downloadButton}
-        <p class="text-sm text-gray-300 mt-4">${data.explanation}</p>
-      `;
+/* small helper to escape HTML */
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-      // Update date input value
-      dateInput.value = data.date;
-    }
+/* ========== UI Events ========== */
+let currentData = null;
 
-    // Event: Fetch on date change
-    dateInput.addEventListener("change", () => {
-      getAPOD(dateInput.value);
+dateInput.addEventListener('change', ()=>{ if(dateInput.value) getAPOD(dateInput.value); });
+
+prevBtn.addEventListener('click', ()=>{
+  const d = new Date(dateInput.value || new Date());
+  d.setDate(d.getDate() - 1);
+  getAPOD(formatDate(d));
+});
+
+nextBtn.addEventListener('click', ()=>{
+  const d = new Date(dateInput.value || new Date());
+  d.setDate(d.getDate() + 1);
+  const today = new Date();
+  if(d > today){ alert('No future images available'); return; }
+  getAPOD(formatDate(d));
+});
+
+randomBtn.addEventListener('click', ()=>{
+  const start = APOD_START.getTime();
+  const end = new Date().getTime();
+  const randomTime = start + Math.random() * (end - start);
+  getAPOD(formatDate(new Date(randomTime)));
+});
+
+todayBtn.addEventListener('click', ()=> getAPOD());
+
+favBtn.addEventListener('click', ()=>{
+  if(!currentData){ alert('No picture loaded yet'); return; }
+  const favs = loadFavorites();
+  const exists = favs.find(f => f.date === currentData.date);
+  if(exists){
+    // remove
+    const newFavs = favs.filter(f => f.date !== currentData.date);
+    saveFavorites(newFavs);
+    favBtn.textContent = '⭐ Add to Favorites';
+  } else {
+    favs.unshift(currentData); // add to front
+    saveFavorites(favs.slice(0, 100)); // cap at 100
+    favBtn.textContent = '★ Favorited';
+  }
+  renderFavList();
+});
+
+/* Favorites modal */
+openFavs.addEventListener('click', ()=>{ favsModal.classList.remove('hidden'); renderFavList(); });
+closeFavs.addEventListener('click', ()=>{ favsModal.classList.add('hidden'); });
+clearFavs.addEventListener('click', ()=>{
+  if(confirm('Clear all favorites?')){ localStorage.removeItem(FAV_KEY); renderFavList(); }
+});
+
+/* render favorite list */
+function renderFavList(){
+  const favs = loadFavorites();
+  if(!favs.length){ favList.innerHTML = '<p class="text-gray-600">No favorites yet — add a picture you like!</p>'; return; }
+  favList.innerHTML = '';
+  favs.forEach(item=>{
+    const div = document.createElement('div');
+    div.className = 'flex items-center gap-3 p-2 border rounded';
+    div.innerHTML = `
+      <img src="${item.url}" class="fav-thumb" alt="${escapeHtml(item.title)}">
+      <div class="flex-1">
+        <div class="font-medium">${escapeHtml(item.title)}</div>
+        <div class="text-xs text-gray-600">${item.date}</div>
+      </div>
+      <div class="flex gap-2 items-center">
+        <button data-load="${item.date}" title="Load" class="px-2 py-1 bg-blue-500 text-white rounded">Load</button>
+        <button data-del="${item.date}" title="Delete" class="px-2 py-1 bg-red-500 text-white rounded">🗑</button>
+      </div>
+    `;
+    favList.appendChild(div);
+  });
+
+  // attach events
+  favList.querySelectorAll('[data-load]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      const d = e.target.getAttribute('data-load');
+      getAPOD(d);
+      favsModal.classList.add('hidden');
     });
-
-    // Event: Previous Day
-    prevBtn.addEventListener("click", () => {
-      const date = new Date(dateInput.value || new Date());
-      date.setDate(date.getDate() - 1);
-      getAPOD(formatDate(date));
+  });
+  favList.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      const d = e.target.getAttribute('data-del');
+      const newFavs = loadFavorites().filter(f=>f.date!==d);
+      saveFavorites(newFavs);
+      renderFavList();
     });
+  });
+}
 
-    // Event: Next Day
-    nextBtn.addEventListener("click", () => {
-      const date = new Date(dateInput.value || new Date());
-      date.setDate(date.getDate() + 1);
-      if (date > new Date()) {
-        alert("No future images available!");
-        return;
-      }
-      getAPOD(formatDate(date));
-    });
+/* ========== TTS Controls ========== */
+speakBtn.addEventListener('click', ()=>{
+  if(!currentData){ alert('Load a picture first'); return; }
+  const text = `${currentData.title}. ${currentData.date}. ${currentData.explanation}`;
+  if(!synth){ alert('Speech not supported on this browser'); return; }
+  synth.cancel(); // stop existing
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 1;
+  synth.speak(utter);
+});
+stopSpeakBtn.addEventListener('click', ()=>{ if(synth) synth.cancel(); });
 
-    // Event: Random Date
-    randomBtn.addEventListener("click", () => {
-      const start = new Date("1995-06-16"); // First APOD date
-      const end = new Date();
-      const randomTime = start.getTime() + Math.random() * (end.getTime() - start.getTime());
-      const randomDate = new Date(randomTime);
-      getAPOD(formatDate(randomDate));
-    });
+/* ========== Dark Mode ========== */
+function applyTheme(theme){
+  if(theme === 'light'){
+    page.classList.remove('bg-gray-900');
+    page.classList.add('bg-white');
+    page.classList.remove('text-white');
+    page.classList.add('text-black');
+    darkToggle.textContent = '🌞 Light';
+  } else {
+    page.classList.remove('bg-white');
+    page.classList.add('bg-gray-900');
+    page.classList.remove('text-black');
+    page.classList.add('text-white');
+    darkToggle.textContent = '🌓 Dark';
+  }
+  localStorage.setItem(THEME_KEY, theme);
+}
+darkToggle.addEventListener('click', ()=>{
+  const cur = localStorage.getItem(THEME_KEY) || 'dark';
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+});
+(function initTheme(){
+  const saved = localStorage.getItem(THEME_KEY) || 'dark';
+  applyTheme(saved);
+})();
 
-    // Load today's picture initially
-    getAPOD();
-  </script>
+/* ========== Init ========== */
+// load today's APOD on start
+getAPOD();
 
+// show favorites button label count (optional small enhancement)
+function updateFavsCount(){
+  const n = loadFavorites().length;
+  openFavs.textContent = `⭐ Favorites ${n?`(${n})`:''}`;
+}
+setInterval(updateFavsCount, 1000);
+renderFavList();
+</script>
 </body>
 </html>
