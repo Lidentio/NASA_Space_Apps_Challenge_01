@@ -8,21 +8,32 @@
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center min-h-screen p-6">
 
-  <h1 class="text-3xl font-bold mb-4 text-center">🌌 NASA Picture of the Day</h1>
+  <h1 class="text-3xl font-bold mb-4 text-center">🌌 NASA Picture of the Day Viewer</h1>
 
-  <div class="flex flex-col md:flex-row gap-3 mb-6 items-center">
+  <!-- Date Controls -->
+  <div class="flex flex-wrap justify-center gap-3 mb-6 items-center">
+    <button id="prevBtn" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md">⏮️ Prev</button>
     <input id="dateInput" type="date" class="text-black p-2 rounded-md" />
-    <button id="fetchBtn" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md">Get Picture</button>
+    <button id="nextBtn" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-md">Next ⏭️</button>
+    <button id="randomBtn" class="bg-purple-700 hover:bg-purple-800 px-4 py-2 rounded-md">🎲 Random</button>
   </div>
 
   <div id="content" class="max-w-3xl text-center"></div>
 
   <script>
-    const apiKey = "NdXOIyddhc5FARBZXLyARSqlZ9XBKvWZPldwfG5k"; // My API
+    const apiKey = "NdXOIyddhc5FARBZXLyARSqlZ9XBKvWZPldwfG5k"; // NASA API key
     const content = document.getElementById("content");
-    const fetchBtn = document.getElementById("fetchBtn");
     const dateInput = document.getElementById("dateInput");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const randomBtn = document.getElementById("randomBtn");
 
+    // Format date helper
+    function formatDate(date) {
+      return date.toISOString().split('T')[0];
+    }
+
+    // Fetch APOD data
     async function getAPOD(date = "") {
       content.innerHTML = `<p class="text-gray-400">Loading...</p>`;
       try {
@@ -35,35 +46,69 @@
           return;
         }
 
-        if (data.media_type === "image") {
-          content.innerHTML = `
-            <h2 class="text-2xl font-semibold mb-2">${data.title}</h2>
-            <p class="text-gray-400 mb-4">${data.date}</p>
-            <img src="${data.url}" alt="${data.title}" class="rounded-lg shadow-lg mb-4 mx-auto max-h-[500px]" />
-            <p class="text-sm text-gray-300">${data.explanation}</p>
-          `;
-        } else if (data.media_type === "video") {
-          content.innerHTML = `
-            <h2 class="text-2xl font-semibold mb-2">${data.title}</h2>
-            <p class="text-gray-400 mb-4">${data.date}</p>
-            <iframe class="mx-auto mb-4 rounded-lg shadow-lg" width="560" height="315" src="${data.url}" frameborder="0" allowfullscreen></iframe>
-            <p class="text-sm text-gray-300">${data.explanation}</p>
-          `;
-        } else {
-          content.innerHTML = `<p>No media available for this date.</p>`;
-        }
+        renderAPOD(data);
       } catch (error) {
         content.innerHTML = `<p class="text-red-500">Error fetching data. Try again later!</p>`;
         console.error(error);
       }
     }
 
-    fetchBtn.addEventListener("click", () => {
-      const date = dateInput.value;
-      getAPOD(date);
+    // Render APOD content
+    function renderAPOD(data) {
+      const isImage = data.media_type === "image";
+      const mediaHTML = isImage
+        ? `<img src="${data.url}" alt="${data.title}" class="rounded-lg shadow-lg mb-4 mx-auto max-h-[500px]" />`
+        : `<iframe class="mx-auto mb-4 rounded-lg shadow-lg" width="560" height="315" src="${data.url}" frameborder="0" allowfullscreen></iframe>`;
+
+      const downloadButton = isImage
+        ? `<a href="${data.hdurl || data.url}" download class="inline-block bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md mt-2">⬇️ Download Image</a>`
+        : "";
+
+      content.innerHTML = `
+        <h2 class="text-2xl font-semibold mb-2">${data.title}</h2>
+        <p class="text-gray-400 mb-2">${data.date}</p>
+        ${mediaHTML}
+        ${downloadButton}
+        <p class="text-sm text-gray-300 mt-4">${data.explanation}</p>
+      `;
+
+      // Update date input value
+      dateInput.value = data.date;
+    }
+
+    // Event: Fetch on date change
+    dateInput.addEventListener("change", () => {
+      getAPOD(dateInput.value);
     });
 
-    // Load today's picture
+    // Event: Previous Day
+    prevBtn.addEventListener("click", () => {
+      const date = new Date(dateInput.value || new Date());
+      date.setDate(date.getDate() - 1);
+      getAPOD(formatDate(date));
+    });
+
+    // Event: Next Day
+    nextBtn.addEventListener("click", () => {
+      const date = new Date(dateInput.value || new Date());
+      date.setDate(date.getDate() + 1);
+      if (date > new Date()) {
+        alert("No future images available!");
+        return;
+      }
+      getAPOD(formatDate(date));
+    });
+
+    // Event: Random Date
+    randomBtn.addEventListener("click", () => {
+      const start = new Date("1995-06-16"); // First APOD date
+      const end = new Date();
+      const randomTime = start.getTime() + Math.random() * (end.getTime() - start.getTime());
+      const randomDate = new Date(randomTime);
+      getAPOD(formatDate(randomDate));
+    });
+
+    // Load today's picture initially
     getAPOD();
   </script>
 
